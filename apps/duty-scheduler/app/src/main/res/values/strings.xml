@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">График дежурств</string>
+
+    <string name="hint_calendar">Календарь устройства</string>
+    <string name="hint_employee">Сотрудник</string>
+
+    <string name="pick_file">Выбрать файл графика (.xls)</string>
+    <string name="push_to_calendar">Записать в календарь</string>
+
+    <string name="state_no_file">Файл не выбран</string>
+    <string name="state_no_calendar">Календарь не выбран</string>
+    <string name="state_no_employee">Сотрудник не выбран</string>
+
+    <string name="permissions_denied">Нет прав на работу с календарём — выдай разрешение в настройках</string>
+    <string name="no_calendars">На устройстве не найдено доступных календарей. Добавь Google-аккаунт или включи системный календарь.</string>
+
+    <string name="parse_error">Не удалось разобрать файл: %1$s</string>
+    <string name="parse_ok">Разобрано: %1$s — %2$d сотрудников, %3$s</string>
+
+    <string name="cleared_existing">Удалено %1$d прежних событий «Дежурство…» за %2$s</string>
+    <string name="inserted_events">Добавлено %1$d событий: главных %2$d, резерв %3$d</string>
+
+    <string name="event_main_title">Дежурство (главный)</string>
+    <string name="event_backup_title">Дежурство (резерв)</string>
+    <string name="event_description">Сотрудник: %1$s\nГрафик: %2$s\nИсточник: %3$s</string>
+</resources>
