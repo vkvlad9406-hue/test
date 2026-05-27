@@ -148,7 +148,14 @@ class MainActivity : AppCompatActivity() {
         val entries = sched.entriesFor(emp)
         val main = entries.count { it.role == DutyRole.MAIN }
         val backup = entries.count { it.role == DutyRole.BACKUP }
-        binding.tvEmployeeStats.text = "Главных: $main · Резерв: $backup"
+        val mainDays = entries.filter { it.role == DutyRole.MAIN }.map { it.date.dayOfMonth }.sorted()
+        val backupDays = entries.filter { it.role == DutyRole.BACKUP }.map { it.date.dayOfMonth }.sorted()
+        val stats = StringBuilder().apply {
+            append("Главных: $main · Резерв: $backup")
+            if (main > 0) append("\nГлавные дни: ${mainDays.joinToString(", ")}")
+            if (backup > 0) append("\nРезерв: ${backupDays.joinToString(", ")}")
+        }
+        binding.tvEmployeeStats.text = stats.toString()
     }
 
     private fun refreshPushButton() {

@@ -74,6 +74,13 @@ class CalendarSync(private val context: Context) {
      * Hard-delete every event in [calendar] whose [Events.DTSTART] is in the given
      * month and whose title matches our prefix OR whose description starts with our
      * sentinel marker. Returns the number of deleted rows.
+     *
+     * Implementation note: we run *three* passes because Android's CalendarProvider
+     * can be picky depending on how the original events were inserted:
+     *   1. Sync-adapter URI with a wide selector (title OR description marker).
+     *   2. Plain URI with the same selector — works for events the current app
+     *      created via non-syncadapter insert.
+     *   3. Query for any remaining matches and delete by individual event _id URI.
      */
     fun clearMonth(calendar: CalendarRef, year: Int, month: Int): Int {
         val zone = ZoneId.systemDefault()
@@ -91,11 +98,32 @@ class CalendarSync(private val context: Context) {
             "Дежурство%",
             "$markerPrefix%",
         )
+
+        var total = 0
         val syncUri = asSyncAdapter(Events.CONTENT_URI, calendar)
-        // First try the hard sync-adapter delete (removes the row entirely).
-        return runCatching { resolver.delete(syncUri, selection, args) }
-            .recoverCatching { resolver.delete(Events.CONTENT_URI, selection, args) }
-            .getOrDefault(0)
+        total += runCatching { resolver.delete(syncUri, selection, args) }.getOrDefault(0)
+        total += runCatching { resolver.delete(Events.CONTENT_URI, selection, args) }.getOrDefault(0)
+
+        // Final sweep: query for anything still matching and delete each by _id.
+        try {
+            resolver.query(
+                Events.CONTENT_URI,
+                arrayOf(Events._ID),
+                selection,
+                args,
+                null,
+            )?.use { c ->
+                while (c.moveToNext()) {
+                    val id = c.getLong(0)
+                    val rowUri = android.content.ContentUris.withAppendedId(Events.CONTENT_URI, id)
+                    val rowSync = asSyncAdapter(rowUri, calendar)
+                    val deleted = runCatching { resolver.delete(rowSync, null, null) }.getOrDefault(0) +
+                        runCatching { resolver.delete(rowUri, null, null) }.getOrDefault(0)
+                    total += deleted
+                }
+            }
+        } catch (_: Throwable) { /* best-effort sweep */ }
+        return total
     }
 
     data class InsertReport(val total: Int, val main: Int, val backup: Int)

@@ -110,25 +110,39 @@ class ScheduleParser {
     }
 
     private fun roleOf(cell: Cell): DutyRole {
-        // Rule: a duty cell counts as MAIN only when the cell has a *visibly coloured*
-        // solid fill. Plain «1» cells, cells with no fill, and cells whose fill is white
-        // (which looks identical to «no fill» in Excel) are treated as BACKUP.
+        // Spec: a duty cell counts as MAIN when it is filled with **yellow**.
+        // White-filled and unfilled cells are BACKUP.
+        //
+        // Strategy: rely on the actual RGB values from jxl's defaultRGB rather than
+        // Colour singleton equality. The Colour constants get re-instantiated in
+        // unexpected ways on Android (R8/dex shuffling, custom palette indexes from
+        // BIFF), which made the previous Colour.WHITE / Colour.DEFAULT_BACKGROUND
+        // checks unreliable in the field.
         val format = try { cell.cellFormat } catch (_: Throwable) { null } ?: return DutyRole.BACKUP
         val pattern = try { format.pattern } catch (_: Throwable) { null }
         if (pattern == null || pattern == Pattern.NONE) return DutyRole.BACKUP
 
         val colour = try { format.backgroundColour } catch (_: Throwable) { null } ?: return DutyRole.BACKUP
-        if (colour == Colour.UNKNOWN || colour == Colour.WHITE ||
-            colour == Colour.DEFAULT_BACKGROUND || colour == Colour.DEFAULT_BACKGROUND1
-        ) {
-            return DutyRole.BACKUP
-        }
-        val rgb = try { colour.defaultRGB } catch (_: Throwable) { null }
-        if (rgb != null && rgb.red >= 240 && rgb.green >= 240 && rgb.blue >= 240) {
-            // Near-white fills (light grey, automatic white, etc.) — still not «yellow»
-            return DutyRole.BACKUP
-        }
-        return DutyRole.MAIN
+        val rgb = try { colour.defaultRGB } catch (_: Throwable) { null } ?: return DutyRole.BACKUP
+
+        val r = rgb.red
+        val g = rgb.green
+        val b = rgb.blue
+        // Near-white (incl. plain white, off-white, very light grey): treat as BACKUP.
+        if (r >= 240 && g >= 240 && b >= 240) return DutyRole.BACKUP
+        // Near-black: defensively BACKUP.
+        if (r <= 16 && g <= 16 && b <= 16) return DutyRole.BACKUP
+        // Yellow-ish fill: red & green both high, blue clearly lower.
+        // This catches #FFFF00, #FFD60A, #FFEB3B, etc., but excludes cyan/magenta/grey fills.
+        if (r >= 200 && g >= 180 && b <= 170) return DutyRole.MAIN
+        // Any other clearly-coloured fill (orange, red, green, etc.): treat as MAIN.
+        // Spec says "yellow = main", but if the template ever uses another colour for
+        // the main slot we still want to recognize it as a non-default highlight.
+        // A "clearly coloured" cell is one where the max-min channel spread is >= 40
+        // OR any channel differs significantly from default-grey.
+        val spread = maxOf(r, g, b) - minOf(r, g, b)
+        if (spread >= 40) return DutyRole.MAIN
+        return DutyRole.BACKUP
     }
 
     private fun detectMonthYear(sheet: Sheet): Pair<Int, Int>? {
