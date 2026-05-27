@@ -6,3 +6,5 @@ local.properties
 captures/
 .cxx/
 .DS_Store
+*.apk
+app/build/

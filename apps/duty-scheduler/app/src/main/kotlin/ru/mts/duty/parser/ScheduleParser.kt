@@ -32,8 +32,6 @@ class ScheduleParser {
         val workbook = try {
             val settings = WorkbookSettings().apply {
                 encoding = "Cp1251"
-                isGCDisabled = true
-                suppressWarnings = true
             }
             Workbook.getWorkbook(input, settings)
         } catch (t: Throwable) {
