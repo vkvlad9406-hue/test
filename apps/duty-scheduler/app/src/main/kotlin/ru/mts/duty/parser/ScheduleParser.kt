@@ -4,6 +4,7 @@ import jxl.Cell
 import jxl.Sheet
 import jxl.Workbook
 import jxl.WorkbookSettings
+import jxl.format.Colour
 import jxl.format.Pattern
 import ru.mts.duty.model.DutyEntry
 import ru.mts.duty.model.DutyRole
@@ -109,12 +110,25 @@ class ScheduleParser {
     }
 
     private fun roleOf(cell: Cell): DutyRole {
-        val pattern = try {
-            cell.cellFormat?.pattern
-        } catch (_: Throwable) {
-            null
+        // Rule: a duty cell counts as MAIN only when the cell has a *visibly coloured*
+        // solid fill. Plain «1» cells, cells with no fill, and cells whose fill is white
+        // (which looks identical to «no fill» in Excel) are treated as BACKUP.
+        val format = try { cell.cellFormat } catch (_: Throwable) { null } ?: return DutyRole.BACKUP
+        val pattern = try { format.pattern } catch (_: Throwable) { null }
+        if (pattern == null || pattern == Pattern.NONE) return DutyRole.BACKUP
+
+        val colour = try { format.backgroundColour } catch (_: Throwable) { null } ?: return DutyRole.BACKUP
+        if (colour == Colour.UNKNOWN || colour == Colour.WHITE ||
+            colour == Colour.DEFAULT_BACKGROUND || colour == Colour.DEFAULT_BACKGROUND1
+        ) {
+            return DutyRole.BACKUP
         }
-        return if (pattern != null && pattern != Pattern.NONE) DutyRole.MAIN else DutyRole.BACKUP
+        val rgb = try { colour.defaultRGB } catch (_: Throwable) { null }
+        if (rgb != null && rgb.red >= 240 && rgb.green >= 240 && rgb.blue >= 240) {
+            // Near-white fills (light grey, automatic white, etc.) — still not «yellow»
+            return DutyRole.BACKUP
+        }
+        return DutyRole.MAIN
     }
 
     private fun detectMonthYear(sheet: Sheet): Pair<Int, Int>? {

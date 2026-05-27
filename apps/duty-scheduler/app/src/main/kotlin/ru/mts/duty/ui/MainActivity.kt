@@ -159,12 +159,18 @@ class MainActivity : AppCompatActivity() {
         val sched = schedule ?: return
         val emp = selectedEmployee ?: return
         val cal = selectedCalendar ?: return
+        if (sched.entriesFor(emp).isEmpty()) {
+            val log = "ℹ️ У $emp нет дежурств в ${sched.monthLabelRu()} — добавлять нечего."
+            binding.tvLog.text = log
+            Snackbar.make(binding.root, log, Snackbar.LENGTH_LONG).show()
+            return
+        }
         binding.btnPush.isEnabled = false
         val sync = CalendarSync(applicationContext)
         lifecycleScope.launch {
             val report = withContext(Dispatchers.IO) {
-                val deleted = sync.clearMonth(cal.id, sched.year, sched.month)
-                val inserted = sync.insertDuties(sched, emp, cal.id)
+                val deleted = sync.clearMonth(cal, sched.year, sched.month)
+                val inserted = sync.insertDuties(sched, emp, cal)
                 deleted to inserted
             }
             val (deleted, inserted) = report
