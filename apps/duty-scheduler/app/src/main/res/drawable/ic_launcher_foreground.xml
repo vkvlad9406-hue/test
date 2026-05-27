@@ -1,0 +1,35 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Calendar grid frame -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M30,34 L78,34 L78,80 L30,80 Z" />
+    <path
+        android:fillColor="#FFB1050D"
+        android:pathData="M30,34 L78,34 L78,44 L30,44 Z" />
+
+    <!-- Yellow main-duty marker -->
+    <path
+        android:fillColor="#FFFFD60A"
+        android:pathData="M56,52 L66,52 L66,62 L56,62 Z" />
+    <!-- "1" number on marker -->
+    <path
+        android:fillColor="#FF000000"
+        android:strokeWidth="0"
+        android:pathData="M60.6,54.8 L60.6,59.6 L62.0,59.6 L62.0,54.0 L60.0,54.0 L60.0,55.0 Z" />
+
+    <!-- Backup-duty marker (1 only) -->
+    <path
+        android:fillColor="#FF000000"
+        android:strokeWidth="0"
+        android:pathData="M44.6,54.8 L44.6,59.6 L46.0,59.6 L46.0,54.0 L44.0,54.0 L44.0,55.0 Z" />
+
+    <!-- Calendar hooks -->
+    <path
+        android:fillColor="#FF555555"
+        android:pathData="M40,28 L44,28 L44,38 L40,38 Z M64,28 L68,28 L68,38 L64,38 Z" />
+</vector>
